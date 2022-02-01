@@ -1,0 +1,36 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - users.yml
+  tasks:
+    - name: Adding coder group
+      group:
+        name: coders
+        state: present
+
+    - name: Adding users
+      user:
+        name: "{{ item.name }}"
+        create_home: yes
+        comment: "Created by ansible"
+        append: yes
+        password: "{{ pass | password_hash('sha512') }}"
+        update_password: on_create
+        groups: coders,pi,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,netdev,lpadmin,gpio,i2c,spi
+      with_items: "{{ users }}"
+  
+    - name: Create SSH Folders
+      file:
+        path: /home/{{ item.name }}/.ssh
+        owner: "{{ item.name }}"
+        state: directory
+      with_items: "{{ users }}"
+
+    - name: Set authorized key for user ubuntu copying it from current user
+      ansible.posix.authorized_key:
+        user: "{{ item.name }}"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/pis.pub') }}"
+      with_items: "{{ users }}"
+

@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - users.yml
+  tasks:
+    - name: Remove User Account
+      user: 
+        name: "{{ item.name }}"
+        state: absent
+        remove: yes
+        force: yes
+      with_items: "{{ users_to_remove }}"
